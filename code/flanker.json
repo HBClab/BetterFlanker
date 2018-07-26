@@ -1,0 +1,13 @@
+{
+    "headers": [
+      "condition",
+      "stimuli",
+      "stimulus.ACC",
+      "stimulus.RT"
+    ],
+    "merg_cols": {},
+    "null_cols": null,
+    "rem_null": true,
+    "replace_dict": {},
+    "timepoints": {}
+}
