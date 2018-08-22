@@ -3,6 +3,7 @@
 
 from convert_eprime import convert
 import pandas as pd
+import numpy as np
 import seaborn as sns
 from argparse import ArgumentParser
 import os
@@ -144,12 +145,19 @@ def main():
             convert.text_to_rcsv(txt_file, edat_file, config, work_file)
             #create dataframe
             df = pd.read_csv(work_file)
-
-            # replace headers
-            headers = {
-                        'condition': 'trial_type',
-                        'stimuli': 'stim_file',
-                        'stimulus.ACC': 'correct',
-                        'stimulus.RT': 'response_time'
-                      }
-            df.rename(columns=headers, inplace=True)
+            #identifies all data recorded from breaks between stimuli
+            array = np.where(df['stimuli'] == 'images/fix.bmp')
+            #removes data recorded from breaks between stimuli
+            df.drop(array[0], inplace=True)
+            #removes all rows that are all NaN
+            df.dropna(how='all', inplace=True)
+            #drops superfulous "stimuli" column
+            df.drop(['stimuli'], axis=1, inplace=True)
+            #renames columns
+            df = df.rename(index=str, columns={"condition": "trial_type", "stimulus.ACC": "correct", "stimulus.RT": "response_time"})
+            #converts 'response_time' column to seconds
+            df['response_time'] = df['response_time'] / 1000
+            #changes 'corrct' column from float to int
+            df.correct = df.correct.astype(int)
+            #rights df out to csv
+            df.to_csv(path_or_buf=proc_file, sep='\t', na_rep="n/a", index=False)
