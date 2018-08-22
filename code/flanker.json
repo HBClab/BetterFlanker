@@ -5,7 +5,7 @@
       "stimulus.ACC",
       "stimulus.RT"
     ],
-    "merg_cols": {},
+    "merge_cols": {},
     "null_cols": null,
     "rem_null": true,
     "replace_dict": {},
