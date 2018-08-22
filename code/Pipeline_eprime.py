@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # generate pipelines that read in the eprime txt files and output a
 # machine readable summary and a useful figure for quality assurance.
 
@@ -35,8 +36,6 @@ def get_parser():
     parser.add_argument('-c', '--config', action='store', required=True,
                         help='config file to process the eprime txt. '
                              'see convert_eprime for details')
-    parser.add_argument('-a', '--acq-id', action='store', choices=['keyboard', 'srbox', 'mri'], required=True,
-                        help='the data can either come from a keyboard response, or an srbox response')
     parser.add_argument('--sub-prefix', action='store',
                         help='add additional characters to the prefix of the participant label')
     return parser
@@ -56,6 +55,7 @@ def copy_eprime_files(src, dest):
             shutil.copy(file, dest)
             copied_files += 1
     return copied_files
+
 
 def main():
     """Entry point"""
@@ -104,19 +104,37 @@ def main():
     else:
         sessions = [1, 2]
 
-    filename_template = 'flankerA-{sub}-{ses}-1.txt'
+    filename_template = 'flankerA-{sub}-{ses}-1.{ext}'
     participant_dict = {}
     for participant in participants:
         participant_dict[participant] = {}
         for session in sessions:
             # initialize sub/ses dictionary
             participant_dict[participant][session] = {'edat': None, 'txt': None}
+
             # get the edat file (if it exists)
-            edat_file = filename_template.format(sub=participant, ses=session)
+            edat_file = filename_template.format(sub=participant, 
+                                                 ses=session, 
+                                                 ext='edat2')
+
+            if os.path.isfile(os.path.join(sourcedata, edat_file)):
+                participant_dict[participant][session]['edat'] = os.path.join(
+                    sourcedata, edat_file
+                )
+            else:
+                print('{edat} missing!'.format(edat=edat_file))
+                participant_dict[participant].pop(session)
+                continue
+
+            # get the txt file (if it exists)
+            txt_file = filename_template.format(sub=participant,
+                                                ses=session,
+                                                ext='txt')
 
             if os.path.isfile(os.path.join(sourcedata, txt_file)):
                 participant_dict[participant][session]['txt'] = os.path.join(
-                    sourcedata, txt_file)
+                    sourcedata, txt_file
+                )
             else:
                 print('{txt} missing!'.format(txt=txt_file))
                 participant_dict[participant].pop(session)
@@ -136,6 +154,8 @@ def main():
             txt_file = participant_dict[participant][session]['txt']
             config = os.path.abspath(opts.config)
 
+            folder = 'beh'
+
             work_file = os.path.join(sourcedata, 'work', 'sub-' + participant_label, 'ses-' + session_label,
                                      'beh', 'sub-{sub}_ses-{ses}_task-flanker_raw.csv'.format(sub=participant_label,
                                                                                               ses=session_label))
@@ -143,21 +163,95 @@ def main():
             os.makedirs(os.path.dirname(work_file), exist_ok=True)
             # conversion to csv
             convert.text_to_rcsv(txt_file, edat_file, config, work_file)
-            #create dataframe
+            # create dataframe
             df = pd.read_csv(work_file)
-            #identifies all data recorded from breaks between stimuli
-            array = np.where(df['stimuli'] == 'images/fix.bmp')
-            #removes data recorded from breaks between stimuli
-            df.drop(array[0], inplace=True)
-            #removes all rows that are all NaN
+            # identify all data recorded from breaks between stimuli
+            nulls = np.where(df['stimuli'] == 'images/fix.bmp')
+            # remove data recorded from breaks between stimuli
+            df.drop(nulls[0], inplace=True)
+            # remove all rows that are all NaN
             df.dropna(how='all', inplace=True)
-            #drops superfulous "stimuli" column
+            # drop superfulous "stimuli" column
             df.drop(['stimuli'], axis=1, inplace=True)
-            #renames columns
+            # rename columns
             df = df.rename(index=str, columns={"condition": "trial_type", "stimulus.ACC": "correct", "stimulus.RT": "response_time"})
-            #converts 'response_time' column to seconds
+            # convert 'response_time' column to seconds
             df['response_time'] = df['response_time'] / 1000
-            #changes 'corrct' column from float to int
+            # change 'correct' column from float to int
             df.correct = df.correct.astype(int)
-            #rights df out to csv
-            df.to_csv(path_or_buf=proc_file, sep='\t', na_rep="n/a", index=False)
+
+            # write processed data to file
+            base_file = 'sub-{sub}_ses-{ses}_task-flanker_events.tsv'
+            bids_file = os.path.join(bids_dir,
+                                     'sub-' + participant_label,
+                                     'ses-' + session_label,
+                                     folder,
+                                     base_file.format(
+                                        sub=participant_label,
+                                        ses=session_label)
+                                     )
+
+            # make sure the directory exists
+            os.makedirs(os.path.dirname(bids_file), exist_ok=True)
+            df.to_csv(bids_file, sep='\t', index=False)
+
+
+            # Do some quality assurance
+            derivatives_dir = os.path.join(derivatives, 'flankerQA')
+            os.makedirs(derivatives_dir, exist_ok=True)
+            base_json = 'sub-{sub}_ses-{ses}_task-flanker_averages.json'
+            out_json = os.path.join(derivatives_dir,
+                                    'sub-' + participant_label,
+                                    'ses-' + session_label,
+                                    folder,
+                                    base_json.format(
+                                       sub=participant_label,
+                                       ses=session_label)
+                                    )
+            base_fig = 'sub-{sub}_ses-{ses}_task-flanker_swarmplot.svg'
+            out_fig = os.path.join(derivatives_dir,
+                                   'sub-' + participant_label,
+                                   'ses-' + session_label,
+                                   folder,
+                                   base_fig.format(
+                                    sub=participant_label,
+                                    ses=session_label)
+                                   )
+
+            # make the derivatives directory for the participant/session in taskSwitchQA
+            os.makedirs(os.path.dirname(out_json), exist_ok=True)
+
+            # get average response time and average correct
+            json_dict = {'response_time': None, 'correct': None}
+            json_dict['response_time'] = df['response_time'].where(df['correct'] == 1).mean()
+            json_dict['correct'] = df['correct'].mean()
+            ave_res = pd.Series(json_dict)
+            ave_res.to_json(out_json)
+
+            # make a swarmplot
+            myplot = sns.swarmplot(x="trial_type",
+                                y="response_time",
+                                hue="correct",
+                                data=df,
+                                size=6)
+            # set the y range larger to fit the legend
+            myplot.set_ylim(0, 2.0)
+            # remove the title of the legend
+            myplot.legend(title=None)
+            # rename the xticks
+            myplot.set_xticklabels(['neutral', 'incongruent', 'congruent'])
+            # rename xlabel
+            myplot.set_xlabel('trial type')
+            myplot.set_ylabel('response time (seconds)')
+            # rename the legend labels
+            new_labels = ['incorrect', 'correct']
+            for t, l in zip(myplot.legend_.texts, new_labels): 
+                t.set_text(l)
+            # save the figure
+            myplot.figure.savefig(out_fig)
+            # remove all plot features from memory
+            plt.clf()
+
+
+if __name__ == '__main__':
+    main()
