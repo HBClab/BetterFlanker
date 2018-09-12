@@ -95,8 +95,10 @@ def main():
         participants = []
         for participant_file in participant_files:
             print(participant_file)
-            sub_dict = sub_expr.search(participant_file).groupdict()
-            participants.append(sub_dict['sub_id'])
+            sub_src = sub_expr.search(participant_file)
+            if sub_src is not None:
+                sub_dict = sub_src.groupdict()
+                participants.append(sub_dict['sub_id'])
 
     # collect sessions
     if opts.session_label:
