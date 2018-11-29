@@ -115,8 +115,8 @@ def main():
             participant_dict[participant][session] = {'edat': None, 'txt': None}
 
             # get the edat file (if it exists)
-            edat_file = filename_template.format(sub=participant, 
-                                                 ses=session, 
+            edat_file = filename_template.format(sub=participant,
+                                                 ses=session,
                                                  ext='edat2')
 
             if os.path.isfile(os.path.join(sourcedata, edat_file)):
@@ -229,30 +229,30 @@ def main():
             json_dict['correct'] = df['correct'].mean()
             ave_res = pd.Series(json_dict)
             ave_res.to_json(out_json)
-
-            # make a swarmplot
-            myplot = sns.swarmplot(x="trial_type",
-                                y="response_time",
-                                hue="correct",
-                                data=df,
-                                size=6)
-            # set the y range larger to fit the legend
-            myplot.set_ylim(0, 2.0)
-            # remove the title of the legend
-            myplot.legend(title=None)
-            # rename the xticks
-            myplot.set_xticklabels(['neutral', 'incongruent', 'congruent'])
-            # rename xlabel
-            myplot.set_xlabel('trial type')
-            myplot.set_ylabel('response time (seconds)')
-            # rename the legend labels
-            new_labels = ['incorrect', 'correct']
-            for t, l in zip(myplot.legend_.texts, new_labels): 
-                t.set_text(l)
-            # save the figure
-            myplot.figure.savefig(out_fig)
-            # remove all plot features from memory
-            plt.clf()
+            if not os.path.isfile(out_fig):
+                # make a swarmplot
+                myplot = sns.swarmplot(x="trial_type",
+                                    y="response_time",
+                                    hue="correct",
+                                    data=df,
+                                    size=6)
+                # set the y range larger to fit the legend
+                myplot.set_ylim(0, 2.0)
+                # remove the title of the legend
+                myplot.legend(title=None)
+                # rename the xticks
+                myplot.set_xticklabels(['neutral', 'incongruent', 'congruent'])
+                # rename xlabel
+                myplot.set_xlabel('trial type')
+                myplot.set_ylabel('response time (seconds)')
+                # rename the legend labels
+                new_labels = ['incorrect', 'correct']
+                for t, l in zip(myplot.legend_.texts, new_labels):
+                    t.set_text(l)
+                # save the figure
+                myplot.figure.savefig(out_fig, dpi=72)
+                # remove all plot features from memory
+                plt.clf()
 
 
 if __name__ == '__main__':
