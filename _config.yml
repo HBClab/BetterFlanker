@@ -1,1 +1,7 @@
 theme: jekyll-theme-minimal
+plugins:
+  - jekyll-relative-links
+title: [BetterFlanker]
+description: [Monitoring BetterFlanker Data]
+logo: https://avatars0.githubusercontent.com/u/24659915?s=400&u=12a4f626488fe0f692d77f355d9dd9f3e4e63f7a&v=4
+baseurl: /BetterFlanker
