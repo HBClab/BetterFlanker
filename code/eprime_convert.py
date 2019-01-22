@@ -91,7 +91,7 @@ def main():
         participants = opts.participant_label
     else:
         participant_files = glob(os.path.join(sourcedata, 'flankerA*.txt'))
-        sub_expr = re.compile(r'^.*flankerA-(?P<sub_id>[0-9]{3})-(?P<ses_id>[0-2])-1.txt')
+        sub_expr = re.compile(r'^.*flankerA-(?P<sub_id>[0-9]{3})-(?P<ses_id>[0-2])-[0-2].txt')
         participants = []
         for participant_file in participant_files:
             print(participant_file)
@@ -106,7 +106,7 @@ def main():
     else:
         sessions = [1, 2]
 
-    filename_template = 'flankerA-{sub}-{ses}-1.{ext}'
+    filename_template = 'flankerA-{sub}-{ses}-{ses}.{ext}'
     participant_dict = {}
     for participant in participants:
         participant_dict[participant] = {}
