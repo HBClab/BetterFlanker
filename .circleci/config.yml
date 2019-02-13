@@ -50,3 +50,10 @@ jobs:
               git commit -m "[skip ci] $(date)"
               git push -q https://${GITHUB_TOKEN}@github.com/HBClab/BetterFlanker.git master
             fi
+
+workflows:
+  version: 2
+  workflow:
+    jobs:
+      - build:
+          context: behav_pipelines
