@@ -42,11 +42,11 @@ jobs:
             git config user.name "QA Bot"
 
             # check to see if there were any changes to the repository.
-            if [ -z $(git ls-files --other --exclude-standard --directory) ]; then
+            if [ -z "$(git ls-files --other --exclude-standard --directory)" ]; then
               echo "No files to be committed!"
             else
               # Push quietly to prevent showing the token in log
               git add .
               git commit -m "[skip ci] $(date)"
-              git push -q https://${GITHUB_TOKEN}@github.com/HBClab/BikeExtendTaskSwitching.git master
+              git push -q https://${GITHUB_TOKEN}@github.com/HBClab/BetterFlanker.git master
             fi
