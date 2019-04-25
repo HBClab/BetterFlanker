@@ -18,7 +18,7 @@ plt.style.use('ggplot')
 sns.set_palette("bright")
 
 # expressions
-session_dict = {1: 'pre', 2: 'post'}
+session_dict = {1: 'pre', 2: 'post', 3: 'followup'}
 
 
 def get_parser():
@@ -91,7 +91,7 @@ def main():
         participants = opts.participant_label
     else:
         participant_files = glob(os.path.join(sourcedata, 'flankerA*.txt'))
-        sub_expr = re.compile(r'^.*flankerA-(?P<sub_id>[0-9]{3})-(?P<ses_id>[0-2])-[0-2].txt')
+        sub_expr = re.compile(r'^.*flankerA-(?P<sub_id>[0-9]{3})-(?P<ses_id>[0-3])-[0-2].txt')
         participants = []
         for participant_file in participant_files:
             print(participant_file)
