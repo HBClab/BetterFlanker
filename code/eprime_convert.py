@@ -104,7 +104,7 @@ def main():
     if opts.session_label:
         sessions = opts.session_label
     else:
-        sessions = [1, 2]
+        sessions = [1, 2, 3]
 
     filename_template = 'flankerA-{sub}-{ses}-{ses}.{ext}'
     participant_dict = {}
